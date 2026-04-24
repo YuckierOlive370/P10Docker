@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tarea 10 — Servidor Web</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header>
+  <h1>Tarea 10 — Servidor Web</h1>
+  <h2>Urbina Trujillo Cesar Manuel #302</h2>
+</header>
+
+<main>
+  <div class="hero">
+    <img src="img/logo.png" alt="Crash Bandicoot">
+    <div class="hero-text">
+      <h2>Infraestructura en Contenedores</h2>
+      <p>Tres servicios (Apache Web, PostgreSQL y vsftpd FTP) desplegados con Docker sobre Windows.</p>
+    </div>
+  </div>
+
+  <h3>Servicios</h3>
+  <div class="cards">
+    <div class="card">
+      <h4>Apache Web</h4>
+      <p>Debian 12 · Usuario no-root · ServerTokens Off</p>
+      <span class="badge">Activo</span>
+    </div>
+    <div class="card">
+      <h4>PostgreSQL</h4>
+      <p>postgres:15 · Volumen db_data · Respaldo en host</p>
+      <span class="badge">Activo</span>
+    </div>
+    <div class="card">
+      <h4>vsftpd FTP</h4>
+      <p>Debian 12 · Grupos Alumno · Jaulas de usuario</p>
+      <span class="badge blue">Activo</span>
+    </div>
+  </div>
+
+  <h3>Archivos FTP</h3>
+  <button class="ftp-btn" onclick="openFTP()">Ver archivos del servidor FTP</button>
+</main>
+
+<div class="modal-overlay" id="ftpModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    <h3>Archivos del servidor FTP</h3>
+    <div class="ftp-grid">
+      <div class="ftp-field"><label>Host</label><span>localhost</span></div>
+      <div class="ftp-field"><label>Puerto</label><span>21</span></div>
+      <div class="ftp-field"><label>Contenedor</label><span>ftp_vsftpd</span></div>
+      <div class="ftp-field"><label>Volumen</label><span>web_content</span></div>
+    </div>
+    <div class="file-list" id="fileList">
+      <p>Haz clic en Actualizar para listar los archivos subidos via FTP.</p>
+    </div>
+    <button class="btn-refresh" onclick="loadFiles()">Actualizar</button>
+  </div>
+</div>
+
+<footer>
+  <strong>Tarea 10</strong> · Docker · Debian 12 · Apache · PostgreSQL · vsftpd
+</footer>
+
+<script>
+  function openFTP()   { document.getElementById('ftpModal').classList.add('open'); }
+  function closeModal(){ document.getElementById('ftpModal').classList.remove('open'); }
+  document.getElementById('ftpModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+
+  async function loadFiles() {
+    const c = document.getElementById('fileList');
+    c.innerHTML = '<p>Cargando...</p>';
+    try {
+      const res  = await fetch('./');
+      const html = await res.text();
+      const doc  = new DOMParser().parseFromString(html, 'text/html');
+      const links = [...doc.querySelectorAll('a[href]')]
+        .map(a => a.getAttribute('href'))
+        .filter(h => !h.startsWith('?') && !h.startsWith('/') && h !== '../');
+      if (!links.length) { showKnown(); return; }
+      c.innerHTML = '';
+      links.forEach(name => {
+        const d = document.createElement('div');
+        d.className = 'file-item';
+        d.innerHTML = `<a href="${name}" style="color:#93c5fd;text-decoration:none">${name}</a>`;
+        c.appendChild(d);
+      });
+    } catch { showKnown(); }
+  }
+
+  function showKnown() {
+    const c = document.getElementById('fileList');
+    c.innerHTML = '';
+    ['index.html', 'css/style.css', 'img/logo.png'].forEach(name => {
+      const d = document.createElement('div');
+      d.className = 'file-item';
+      d.textContent = name;
+      c.appendChild(d);
+    });
+  }
+</script>
+</body>
+</html>

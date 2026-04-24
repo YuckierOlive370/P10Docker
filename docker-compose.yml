@@ -1,0 +1,58 @@
+version: '3.9'
+
+networks:
+  infra_red:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  db_data:
+  web_content:
+
+services:
+
+  web:
+    build: ./web
+    container_name: web_apache
+    networks:
+      - infra_red
+    ports:
+      - "8080:80"
+    volumes:
+      - web_content:/var/www/html
+    mem_limit: 512m
+    cpus: 0.5
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    container_name: db_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: tarea10pass
+      POSTGRES_DB: escuela
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./postgres/backup:/backup
+    networks:
+      - infra_red
+    mem_limit: 512m
+    cpus: 0.5
+    restart: unless-stopped
+
+  ftp:
+    build: ./ftp
+    container_name: ftp_vsftpd
+    privileged: true
+    networks:
+      - infra_red
+    ports:
+      - "21:21"
+      - "21100-21110:21100-21110"
+    volumes:
+      - web_content:/home/ftp/public
+    mem_limit: 512m
+    cpus: 0.5
+    restart: unless-stopped
