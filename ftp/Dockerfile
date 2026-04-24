@@ -5,9 +5,10 @@ RUN apt-get update -qq && \
                        iproute2 util-linux --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copiar tus scripts
+# Copiar scripts y entrypoint
 COPY scripts/ /opt/ftp-admin/
-RUN chmod +x /opt/ftp-admin/*.sh
+COPY entrypoint.sh /opt/ftp-admin/entrypoint.sh
+RUN chmod +x /opt/ftp-admin/*.sh /opt/ftp-admin/entrypoint.sh
 
 # Estructura de directorios FTP
 RUN mkdir -p /home/ftp/LocalUser /home/ftp/public && \
@@ -45,5 +46,5 @@ EOF
 
 EXPOSE 21 21100-21110
 
-# vsftpd en segundo plano; el menú se corre con docker exec -it
-CMD ["bash", "-c", "vsftpd /etc/vsftpd.conf & tail -f /dev/null"]
+# El entrypoint restaura bind mounts e inicia vsftpd automáticamente
+CMD ["/opt/ftp-admin/entrypoint.sh"]

@@ -67,8 +67,8 @@
 </footer>
 
 <script>
-  function openFTP()   { document.getElementById('ftpModal').classList.add('open'); }
-  function closeModal(){ document.getElementById('ftpModal').classList.remove('open'); }
+  function openFTP()    { document.getElementById('ftpModal').classList.add('open'); }
+  function closeModal() { document.getElementById('ftpModal').classList.remove('open'); }
   document.getElementById('ftpModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
@@ -77,32 +77,39 @@
     const c = document.getElementById('fileList');
     c.innerHTML = '<p>Cargando...</p>';
     try {
-      const res  = await fetch('./');
+      // Lee la carpeta ftp-files/ del volumen compartido via Apache autoindex
+      const res  = await fetch('/ftp-files/');
       const html = await res.text();
       const doc  = new DOMParser().parseFromString(html, 'text/html');
+
       const links = [...doc.querySelectorAll('a[href]')]
         .map(a => a.getAttribute('href'))
-        .filter(h => !h.startsWith('?') && !h.startsWith('/') && h !== '../');
-      if (!links.length) { showKnown(); return; }
+        .filter(h => h && !h.startsWith('?') && !h.startsWith('/') && h !== '../' && h !== './');
+
+      if (!links.length) {
+        c.innerHTML = '<p>No hay archivos en la carpeta FTP aún.</p>';
+        return;
+      }
+
       c.innerHTML = '';
       links.forEach(name => {
+        const clean = decodeURIComponent(name);
+        const ext   = clean.split('.').pop().toLowerCase();
+        const icons = { png:'🖼️', jpg:'🖼️', jpeg:'🖼️', gif:'🖼️', pdf:'📄',
+                        txt:'📝', sh:'⚙️', html:'🌐', css:'🎨', js:'📜',
+                        zip:'🗜️', sql:'🐘', mp4:'🎬', mp3:'🎵' };
+        const icon  = icons[ext] || (clean.endsWith('/') ? '📁' : '📄');
+
         const d = document.createElement('div');
         d.className = 'file-item';
-        d.innerHTML = `<a href="${name}" style="color:#93c5fd;text-decoration:none">${name}</a>`;
+        d.innerHTML = `<span style="margin-right:8px">${icon}</span>
+                       <a href="/ftp-files/${name}" target="_blank"
+                          style="color:#1d4ed8;text-decoration:none">${clean}</a>`;
         c.appendChild(d);
       });
-    } catch { showKnown(); }
-  }
-
-  function showKnown() {
-    const c = document.getElementById('fileList');
-    c.innerHTML = '';
-    ['index.html', 'css/style.css', 'img/logo.png'].forEach(name => {
-      const d = document.createElement('div');
-      d.className = 'file-item';
-      d.textContent = name;
-      c.appendChild(d);
-    });
+    } catch {
+      c.innerHTML = '<p>Error al cargar archivos. Intenta de nuevo.</p>';
+    }
   }
 </script>
 </body>
